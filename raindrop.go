@@ -32,12 +32,12 @@ var (
 	// 2018-02-22 16:44:54.639553 +0800 CST m=+0.000783951
 	Epoch int64 = 1519289094639
 
-	Validate *validator.Validate
+	Validate   *validator.Validate
+	ServerNode *Node
 )
 
 type ID int64
 
-// logger init.
 func setupLog() error {
 	// TODO Extract the variable to configuration file (config.yaml).
 	level := "debug"
@@ -79,6 +79,7 @@ func init() {
 		log.Fatal("Input node index value illegal. node: [1-31]")
 	}
 	nodeIndex = int64(*nodeIdx)
+	ServerNode = newNode(nodeIndex)
 }
 
 func main() {
@@ -91,14 +92,13 @@ type TickType struct {
 	Typ int64 `form:"t" binding:"required" validate:"min=1,max=64"`
 }
 
-func newNode(node int64, typ int64) *Node {
-	return &Node{node: node, typ: typ, time: 0, step: 0}
+func newNode(node int64) *Node {
+	return &Node{node: node, typ: 0, time: 0, step: 0}
 }
 
 func doTicking(c *gin.Context) {
 	var tt TickType
 	if err := c.BindQuery(&tt); err == nil {
-		log.Info(tt.Typ)
 		e := Validate.Struct(tt)
 		if e != nil {
 			log.Error(e)
@@ -108,8 +108,7 @@ func doTicking(c *gin.Context) {
 				})
 			return
 		}
-		node := newNode(nodeIndex, tt.Typ)
-		id, err := node.ticking(tt.Typ)
+		id, err := ServerNode.ticking(tt.Typ)
 		if err != nil {
 			log.Error(err)
 			c.JSON(http.StatusInternalServerError,
@@ -117,8 +116,7 @@ func doTicking(c *gin.Context) {
 					"message": err.Error(),
 				})
 		}
-		log.Info(node)
-		log.Infof("node=%v", node)
+		log.Infof("node=%v", *ServerNode)
 
 		c.JSON(http.StatusOK,
 			gin.H{"status": "OK",
@@ -143,6 +141,7 @@ func (n *Node) ticking(typ int64) (ID, error) {
 
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
+	n.typ = typ
 	now := time.Now().UnixNano() / 1000000
 
 	if n.time == now {
