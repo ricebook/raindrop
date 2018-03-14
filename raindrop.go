@@ -71,12 +71,12 @@ func init() {
 	Validate = validator.New()
 
 	// init node index from command argument
-	nodeIdx := flag.Int("node", 1, "node index")
+	nodeIdx := flag.Int("node", 0, "node index")
 	flag.Parse()
 
 	log.Infof("Raindrop nodeIndex=%d", *nodeIdx)
 	if uint8(*nodeIdx) > nodeMax || *nodeIdx < 1 {
-		log.Fatal("Input node index value illegal. node: [1-31]")
+		log.Fatal("Input node index value illegal. node: [1-31]. You can special the node param, usage: -node=1 .")
 	}
 	nodeIndex = int64(*nodeIdx)
 	ServerNode = newNode(nodeIndex)
@@ -98,7 +98,7 @@ func newNode(node int64) *Node {
 
 func doTicking(c *gin.Context) {
 	var tt TickType
-	if err := c.BindQuery(&tt); err == nil {
+	if err := c.Bind(&tt); err == nil {
 		e := Validate.Struct(tt)
 		if e != nil {
 			log.Error(e)
