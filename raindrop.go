@@ -76,7 +76,7 @@ func init() {
 
 	log.Infof("Raindrop nodeIndex=%d", *nodeIdx)
 	if uint8(*nodeIdx) > nodeMax || *nodeIdx < 1 {
-		log.Fatal("Input node index value illegal. node: [1-31]. You can special the node param, usage: -node=1 .")
+		log.Fatal("Input node index value illegal. node: [1-31]. You can specify the node param, usage: -node=1 .")
 	}
 	nodeIndex = int64(*nodeIdx)
 	ServerNode = newNode(nodeIndex)
